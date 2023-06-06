@@ -144,27 +144,44 @@ def getCandlestickChart(data, selectedTicker):
 
 def getDividendCharts(selectedTicker):
     dividendData = scraper.getDividendData(selectedTicker)
+    dividendByYear = scraper.getDividendDataByYear(selectedTicker, dividendData)
 
     dividendChart = alt.Chart(dividendData).mark_line(size=2).encode(
         x=alt.X("date", title="Date"),
         y=alt.Y('dividends', scale=alt.Scale(
             zero=False), title="Dividends ($)")
-    ).properties(height=600, title=selectedTicker).interactive()
+    ).properties(height=300, title=selectedTicker).interactive()
 
     dividendPercentChart = alt.Chart(dividendData).mark_line(size=2).encode(
         x=alt.X("date", title="Date"),
         y=alt.Y('dividendPercent', scale=alt.Scale(
             zero=False), title="Dividends (%)")
-    ).properties(height=600, title=selectedTicker).interactive()
+    ).properties(height=300, title=selectedTicker).interactive()
+
+    dividendYearChart = alt.Chart(dividendByYear).mark_line(size=2).encode(
+        x=alt.X("date", title="Date"),
+        y=alt.Y('dividends', scale=alt.Scale(
+            zero=False), title="Dividends ($)")
+    ).properties(height=300, title=selectedTicker).interactive()
+
+    dividendYearPercentChart = alt.Chart(dividendByYear).mark_line(size=2).encode(
+        x=alt.X("date", title="Date"),
+        y=alt.Y('dividendPercent', scale=alt.Scale(
+            zero=False), title="Dividends (%)")
+    ).properties(height=300, title=selectedTicker).interactive()
 
     col1, col2 = st.columns(2)
-
     with col1:
+        st.subheader("Dividend Payments")
         st.altair_chart(dividendChart, use_container_width=True)
-    with col2:
         st.altair_chart(dividendPercentChart, use_container_width=True)
+    with col2:
+        st.subheader("Dividend Payments Grouped By Year")
+        st.altair_chart(dividendYearChart, use_container_width=True)
+        st.altair_chart(dividendYearPercentChart, use_container_width=True)
+
     st.dataframe(
-        data=dividendData[::-1].reset_index(drop=True), use_container_width=True)
+        data=dividendData[::-1].reset_index(drop=True), use_container_width=True,height=250)
 
 
 def getPayChart(tickerInfo, selectedTicker, indexTicker):
@@ -173,7 +190,7 @@ def getPayChart(tickerInfo, selectedTicker, indexTicker):
             x=alt.X("totalPay", title="Total Pay"),
             y=alt.Y("title", title="Title"),
 
-        ).properties(height=600, title=selectedTicker).interactive()
+        ).properties(height=350, title=selectedTicker).interactive()
     except:
         pass
     if selectedTicker != indexTicker:

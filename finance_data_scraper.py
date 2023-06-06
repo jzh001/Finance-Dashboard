@@ -73,9 +73,23 @@ def getFinancialData(ticker):
 def getDividendData(ticker):
     noOfHours = convertIntervalToHours("10y")
     df = yq.Ticker(ticker).dividend_history(start=(datetime.now() - timedelta(hours=noOfHours)).strftime("%Y-%m-%d")).reset_index()
-    df["dividendPercent"] = [100 * row['dividends'] / getPriceOnDate(row['date']) for i, row in df.iterrows()]
+    df["dividendPercent"] = [100 * row['dividends'] / getPriceOnDate(row['date'], ticker) for i, row in df.iterrows()]
     return df
 
-def getPriceOnDate(date):
-    df = yq.Ticker("AAPL").history(start=date, end=date + timedelta(days = 7)).reset_index()
+
+def getAverageYearlyPrice(year, ticker):
+    return yq.Ticker(ticker).history(start=datetime(year, 1, 1), end=datetime(year, 1, 1) + timedelta(days=365))['close'].mean()
+
+
+def getDividendDataByYear(ticker, dividendData):
+    df = dividendData
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.groupby(df['date'].dt.year)['dividends'].sum().reset_index()
+    df["dividendPercent"] = [100 * row['dividends'] / getAverageYearlyPrice(int(row['date']), ticker) for i, row in df.iterrows()]
+    df.reset_index(drop=True)
+    df['date'] = pd.to_datetime(df['date'], format='%Y')
+    return df
+
+def getPriceOnDate(date, ticker):
+    df = yq.Ticker(ticker).history(start=date, end=date + timedelta(days = 7)).reset_index()
     return df['close'][0] 
