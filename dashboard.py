@@ -98,7 +98,10 @@ def getDashboard(selectedIndex):
                 fundDf = pd.DataFrame(scraper.getFinancialData(selectedTicker))
                 st.dataframe(fundDf.style.set_properties(
                     **{'text-align': 'center'}), use_container_width=True, height=600)
-        getNews(selectedTicker)
+        try:
+            getNews(selectedTicker) #getNews occasionally runs into JSON Decode error
+        except:
+            pass
 
 
 def getLineChart(data, selectedTicker):
