@@ -3,7 +3,7 @@ import finance_data_scraper as scraper
 import altair as alt
 import webbrowser
 import pandas as pd
-
+import numpy as np
 
 def getDashboard(selectedIndex):
     st.title(f"{selectedIndex} Dashboard")
@@ -65,6 +65,7 @@ def getDashboard(selectedIndex):
             getVolumeChart(data)
         with strategiesTab:
             getMovingAveragesChart(data)
+            getResistSupportChart(data)
         if selectedTicker != indexTicker:
             with dividendTab:
                 getDividendCharts(selectedTicker)
@@ -250,7 +251,6 @@ def getMovingAveragesChart(data):
     }).dropna()
     melted_data = moving_averages.melt(
         id_vars=['Date', 'Close'], var_name='Moving Average', value_name='Price')
-    print(melted_data)
     chart = alt.Chart(melted_data).mark_line().encode(
         x='Date:T',
         y=alt.Y('Price:Q', scale=alt.Scale(zero=False)),
@@ -260,3 +260,46 @@ def getMovingAveragesChart(data):
         height=350,
     ).interactive()
     st.altair_chart(chart, use_container_width=True)
+
+
+def getResistSupportChart(df):
+    
+    st.subheader("Resistance and Support Lines")
+    support, resistance = calculate_support_resistance(df)
+
+    # Create DataFrame for plotting
+    df["support"] = support
+    df["resistance"] = resistance
+    df["date"] = pd.to_datetime(df["date"], format='ISO8601')
+    # Plot the data using Altair
+    lineChart = alt.Chart(df).mark_line().encode(
+        x=alt.X("date", title="Date"),
+        y=alt.Y('close', scale=alt.Scale(zero=False), title="Close"),
+        color=alt.value("green")
+    )
+    lineChart += alt.Chart(df).mark_line().encode(
+        x=alt.X("date", title="Date"),
+        y=alt.Y('resistance', title="Resistance"),
+        color=alt.value("red"),
+    )
+    lineChart += alt.Chart(df).mark_line().encode(
+        x=alt.X("date", title="Date"),
+        y=alt.Y('support', title="Support"),
+        color=alt.value("blue"),
+    )
+
+    st.altair_chart(lineChart.properties(height=350).interactive(), use_container_width=True)
+    
+    
+def calculate_support_resistance(data):
+    #print("calculating")
+    x = pd.to_datetime(data['date']).apply(lambda c: int(c.timestamp())) #gets rid of wiggly lines due to missing timestamps
+    y = data['close']
+    p = np.polyfit(x, y, 1)  # Perform linear regression
+    #print("polyfit", p)
+    regression_line = np.polyval(p, x)
+    support_line = regression_line - (np.max(y) - np.min(y)) / 5
+    resistance_line = regression_line + (np.max(y) - np.min(y)) / 5  # Add the range to support line to get resistance line
+    #print("RESULT")
+    #print(support_line, resistance_line)
+    return support_line, resistance_line
