@@ -87,7 +87,7 @@ def getDashboard(selectedIndex):
                     pass
 
     with mainCols[2]:
-        st.markdown(f"## [{selectedTicker}] {tickerInfo['shortName']}")
+        st.markdown(f"### [{selectedTicker}] {tickerInfo['shortName']}")
         if selectedTicker != indexTicker:
             st.write(f"{tickerInfo['sector']}: {tickerInfo['industryDisp']}")
             with st.expander("Business Summary"):
@@ -104,7 +104,7 @@ def getLineChart(data, selectedTicker):
     lineChart = alt.Chart(data).mark_line(size=2).encode(
         x=alt.X("date", title="Date"),
         y=alt.Y('close', scale=alt.Scale(zero=False), title="Close")
-    ).properties(height=600, title=selectedTicker).interactive()
+    ).properties(height=350, title=selectedTicker).interactive()
     st.altair_chart(lineChart, use_container_width=True)
 
 
@@ -117,7 +117,7 @@ def getVolumeChart(data):
             alt.value('#2ecc71'),  # green color for bullish days
             alt.value('#e74c3c')   # red color for bearish days
         )
-    ).properties(height=200).interactive()
+    ).properties(height=150).interactive()
     st.altair_chart(volumeChart, use_container_width=True)
 
 
@@ -139,7 +139,7 @@ def getCandlestickChart(data, selectedTicker):
     )
 
     candlestickChart = candlestickChart.properties(
-        height=600, title=selectedTicker).interactive()
+        height=350, title=selectedTicker).interactive()
     st.altair_chart(candlestickChart, use_container_width=True)
 
 
@@ -152,25 +152,25 @@ def getDividendCharts(selectedTicker):
         x=alt.X("date", title="Date"),
         y=alt.Y('dividends', scale=alt.Scale(
             zero=False), title="Dividends ($)")
-    ).properties(height=300, title=selectedTicker).interactive()
+    ).properties(height=250, title=selectedTicker).interactive()
 
     dividendPercentChart = alt.Chart(dividendData).mark_line(size=2).encode(
         x=alt.X("date", title="Date"),
         y=alt.Y('dividendPercent', scale=alt.Scale(
             zero=False), title="Dividends (%)")
-    ).properties(height=300, title=selectedTicker).interactive()
+    ).properties(height=250, title=selectedTicker).interactive()
 
     dividendYearChart = alt.Chart(dividendByYear).mark_line(size=2).encode(
         x=alt.X("date", title="Date"),
         y=alt.Y('dividends', scale=alt.Scale(
             zero=False), title="Dividends ($)")
-    ).properties(height=300, title=selectedTicker).interactive()
+    ).properties(height=250, title=selectedTicker).interactive()
 
     dividendYearPercentChart = alt.Chart(dividendByYear).mark_line(size=2).encode(
         x=alt.X("date", title="Date"),
         y=alt.Y('dividendPercent', scale=alt.Scale(
             zero=False), title="Dividends (%)")
-    ).properties(height=300, title=selectedTicker).interactive()
+    ).properties(height=250, title=selectedTicker).interactive()
 
     col1, col2 = st.columns(2)
     with col1:
@@ -207,11 +207,11 @@ def getPayChart(tickerInfo, selectedTicker, indexTicker):
 
 
 def getNews(selectedTicker):
-    st.markdown("## News")
+    st.markdown("### News")
     allNews = [news for news in scraper.getNews(
         selectedTicker) if "thumbnail" in news]
     for news in allNews[:5]:
-        cols = st.columns([1, 0.3, 4.5, 1])
+        cols = st.columns([1, 0.1, 4.5, 2])
         with cols[0]:
             st.write("")
             try:
@@ -219,7 +219,7 @@ def getNews(selectedTicker):
             except:
                 st.image(news['thumbnail']['resolutions'][0]['url'])
         with cols[2]:
-            st.markdown(f"#### {news['title']}")
+            st.markdown(f"##### {news['title']}")
             st.write(news['publisher'])
         with cols[3]:
             st.write("")
