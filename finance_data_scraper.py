@@ -13,7 +13,7 @@ def getYahooHistorical(ticker,duration):
     interval = ""
     if noOfHours <= 24:
         interval = "5m"
-    elif noOfHours <= 5 * 24:
+    elif noOfHours <= 7 * 24:
         interval = "1h"
     elif noOfHours <= 365 * 24:
         interval = "1d"
