@@ -274,7 +274,7 @@ def getResistSupportChart(df):
     # Create DataFrame for plotting
     df["support"] = support
     df["resistance"] = resistance
-    df["date"] = pd.to_datetime(df['date'])
+    df["date"] = pd.to_datetime(df['date'], utc=True)
     # Plot the data using Altair
     lineChart = alt.Chart(df).mark_line().encode(
         x=alt.X("date", title="Date"),
@@ -297,8 +297,8 @@ def getResistSupportChart(df):
     
 def calculate_support_resistance(data):
     #print("calculating")
-    data["date"] = pd.to_datetime(cleanseDates(data['date']))
-    x = pd.to_datetime(data['date']).apply(lambda c: int(c.timestamp())) #gets rid of wiggly lines due to missing timestamps
+    data["date"] = pd.to_datetime(cleanseDates(data['date']), utc=True)
+    x = data['date'].apply(lambda c: int(c.timestamp())) #gets rid of wiggly lines due to missing timestamps
     y = data['close']
     p = np.polyfit(x, y, 1)  # Perform linear regression
     #print("polyfit", p)
