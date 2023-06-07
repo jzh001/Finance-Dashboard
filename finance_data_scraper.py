@@ -93,3 +93,7 @@ def getDividendDataByYear(ticker, dividendData):
 def getPriceOnDate(date, ticker):
     df = yq.Ticker(ticker).history(start=date, end=date + timedelta(days = 7)).reset_index()
     return df['close'][0] 
+
+def getIndustryData(industry):
+    pass
+

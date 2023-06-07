@@ -18,23 +18,19 @@ def getDashboard(selectedIndex):
         selectedTicker = st.sidebar.selectbox(
             "Ticker", symbolOptions, index=symbolOptions.index(indexTicker))
 
-        
-
-        if selectedTicker != indexTicker:
-            selectedRow = symbols[symbols['Symbol'] ==
-                                selectedTicker].reset_index(drop=True).T
-            selectedRow.columns = ["Attributes"]
-            st.sidebar.write(selectedRow.style.set_properties(
-                **{'text-align': 'center'}))
     else:
-        selectedTicker = st.sidebar.text_input("Custom Ticker", max_chars=7,value="AAPL")
+        selectedTicker = st.sidebar.text_input(
+            "Custom Ticker", max_chars=7, value="AAPL")
         indexTicker = "Custom"
 
-
     duration = st.sidebar.selectbox(
-            "Duration", ["1d", "5d", "1wk", "1mo", "3mo", "6mo", "YTD", "1y", "5y", "10y"], index=7)
-
-    
+        "Duration", ["1d", "5d", "1wk", "1mo", "3mo", "6mo", "YTD", "1y", "5y", "10y"], index=7)
+    if selectedTicker != indexTicker:
+        selectedRow = symbols[symbols['Symbol'] ==
+                              selectedTicker].reset_index(drop=True).T
+        selectedRow.columns = ["Attributes"]
+        st.sidebar.write(selectedRow.style.set_properties(
+            **{'text-align': 'center'}))
     try:
         tickerInfo = scraper.getInfo(selectedTicker)
     except:
@@ -55,11 +51,11 @@ def getDashboard(selectedIndex):
     with mainCols[0]:
 
         if selectedTicker == indexTicker:
-            candleTab, lineTab, dataTab, industryTab = st.tabs(
-                ["Candlesticks", "Trendline", "Data", "Industry"])
+            candleTab, lineTab, strategiesTab, dataTab, industryTab = st.tabs(
+                ["Candlesticks", "Trendline", "Strategies", "Data", "Industry"])
         else:
-            candleTab, lineTab, dividendTab, managemtTab, dataTab, industryTab = st.tabs(
-                ["Candlesticks", "Trendline", "Dividends", "Management", "Data", "Industry"])
+            candleTab, lineTab, strategiesTab, dividendTab, managemtTab, dataTab, industryTab = st.tabs(
+                ["Candlesticks", "Trendline", "Strategies", "Dividends", "Management", "Data", "Industry"])
 
         with candleTab:
             getCandlestickChart(data, selectedTicker)
@@ -67,6 +63,8 @@ def getDashboard(selectedIndex):
         with lineTab:
             getLineChart(data, selectedTicker)
             getVolumeChart(data)
+        with strategiesTab:
+            getMovingAveragesChart(data)
         if selectedTicker != indexTicker:
             with dividendTab:
                 getDividendCharts(selectedTicker)
@@ -83,7 +81,10 @@ def getDashboard(selectedIndex):
             if selectedTicker == indexTicker:
                 pass
             else:
-                pass
+                if selectedIndex == "S&P 500":
+                    getIndustryTab(selectedTicker, selectedIndex)
+                else:
+                    pass
 
     with mainCols[2]:
         st.markdown(f"## [{selectedTicker}] {tickerInfo['shortName']}")
@@ -144,7 +145,8 @@ def getCandlestickChart(data, selectedTicker):
 
 def getDividendCharts(selectedTicker):
     dividendData = scraper.getDividendData(selectedTicker)
-    dividendByYear = scraper.getDividendDataByYear(selectedTicker, dividendData)
+    dividendByYear = scraper.getDividendDataByYear(
+        selectedTicker, dividendData)
 
     dividendChart = alt.Chart(dividendData).mark_line(size=2).encode(
         x=alt.X("date", title="Date"),
@@ -181,7 +183,7 @@ def getDividendCharts(selectedTicker):
         st.altair_chart(dividendYearPercentChart, use_container_width=True)
 
     st.dataframe(
-        data=dividendData[::-1].reset_index(drop=True), use_container_width=True,height=250)
+        data=dividendData[::-1].reset_index(drop=True), use_container_width=True, height=250)
 
 
 def getPayChart(tickerInfo, selectedTicker, indexTicker):
@@ -224,3 +226,37 @@ def getNews(selectedTicker):
             st.write("")
             if st.button("More >", key=news['link']):
                 webbrowser.open_new_tab(news['link'])
+
+
+def getIndustryTab(ticker, selectedIndex):
+    indexTicker, df = scraper.getSymbols(selectedIndex)
+    df = df.reset_index()
+    industry = df[df["Symbol"] == ticker]["GICS Sector"].reset_index(drop=True)[
+        0]
+    st.subheader(industry)
+    pass  # TODO: Add industry comparisons
+
+
+def getMovingAveragesChart(data):
+    st.subheader("Moving Averages")
+    data['date'] = data['date'].astype(str)
+    short_run_ma = data['close'].rolling(window=15).mean()
+    long_run_ma = data['close'].rolling(window=30).mean()
+    moving_averages = pd.DataFrame({
+        'Date': data['date'],
+        'Close': data['close'],
+        'Short Run MA': short_run_ma,
+        'Long Run MA': long_run_ma
+    }).dropna()
+    melted_data = moving_averages.melt(
+        id_vars=['Date', 'Close'], var_name='Moving Average', value_name='Price')
+    print(melted_data)
+    chart = alt.Chart(melted_data).mark_line().encode(
+        x='Date:T',
+        y=alt.Y('Price:Q', scale=alt.Scale(zero=False)),
+        color='Moving Average:N',
+        tooltip=['Date:T', 'Price:Q']
+    ).properties(
+        height=350,
+    ).interactive()
+    st.altair_chart(chart, use_container_width=True)
