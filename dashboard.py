@@ -5,6 +5,7 @@ import webbrowser
 import pandas as pd
 import numpy as np
 
+
 def getDashboard(selectedIndex):
     st.title(f"{selectedIndex} Dashboard")
 
@@ -66,6 +67,7 @@ def getDashboard(selectedIndex):
         with strategiesTab:
             getMovingAveragesChart(data)
             getResistSupportChart(data)
+            getMomentumChart(data)
         if selectedTicker != indexTicker:
             with dividendTab:
                 getDividendCharts(selectedTicker)
@@ -99,7 +101,8 @@ def getDashboard(selectedIndex):
                 st.dataframe(fundDf.style.set_properties(
                     **{'text-align': 'center'}), use_container_width=True, height=600)
         try:
-            getNews(selectedTicker) #getNews occasionally runs into JSON Decode error
+            # getNews occasionally runs into JSON Decode error
+            getNews(selectedTicker)
         except:
             pass
 
@@ -264,13 +267,14 @@ def getMovingAveragesChart(data):
     ).interactive()
     st.altair_chart(chart, use_container_width=True)
 
+
 def cleanseDates(dates):
     minLength = min([len(date) for date in dates])
     return pd.Series([date[:minLength] for date in dates])
 
 
 def getResistSupportChart(df):
-    
+
     st.subheader("Resistance and Support Lines")
     support, resistance = calculate_support_resistance(df)
 
@@ -295,19 +299,47 @@ def getResistSupportChart(df):
         color=alt.value("blue"),
     )
 
-    st.altair_chart(lineChart.properties(height=350).interactive(), use_container_width=True)
-    
-    
+    st.altair_chart(lineChart.properties(
+        height=350).interactive(), use_container_width=True)
+
+
 def calculate_support_resistance(data):
-    #print("calculating")
+    # print("calculating")
     data["date"] = pd.to_datetime(cleanseDates(data['date']), utc=True)
-    x = data['date'].apply(lambda c: int(c.timestamp())) #gets rid of wiggly lines due to missing timestamps
+    # gets rid of wiggly lines due to missing timestamps
+    x = data['date'].apply(lambda c: int(c.timestamp()))
     y = data['close']
     p = np.polyfit(x, y, 1)  # Perform linear regression
     #print("polyfit", p)
     regression_line = np.polyval(p, x)
     support_line = regression_line - (np.max(y) - np.min(y)) / 5
-    resistance_line = regression_line + (np.max(y) - np.min(y)) / 5  # Add the range to support line to get resistance line
-    #print("RESULT")
+    # Add the range to support line to get resistance line
+    resistance_line = regression_line + (np.max(y) - np.min(y)) / 5
+    # print("RESULT")
     #print(support_line, resistance_line)
     return support_line, resistance_line
+
+
+def getMomentumChart(df):
+    momentum_window = 10  # Specify the window size for momentum calculation
+    df = calculate_momentum(df, momentum_window)
+    chart = alt.Chart(df).mark_line().encode(
+        x=alt.X("date", title="Date"),
+        y=alt.Y('momentum:Q', title="Momentum",),
+
+    )
+    zero_line = alt.Chart(pd.DataFrame({'y': [0]})).mark_rule(color='red', strokeDash=[7, 7], size=3).encode(
+        y='y:Q'
+    )
+    chart += zero_line 
+    
+
+    st.subheader("Momentum")
+    st.altair_chart(chart.properties(
+        height=350
+    ).interactive(), use_container_width=True)
+
+
+def calculate_momentum(data, window):
+    data['momentum'] = data['close'].pct_change(window) * 100
+    return data.dropna()
