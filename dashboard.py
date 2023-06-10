@@ -16,7 +16,7 @@ def getDashboard(selectedIndex):
         st.write("Data Unavailable: Check your Inputs")
         return
     
-    data = scraper.getYahooHistorical(
+    stockData = scraper.getYahooHistorical(
         selectedTicker, duration=duration)
 
     mainCols = st.columns([3, 0.1, 1.5])
@@ -30,18 +30,27 @@ def getDashboard(selectedIndex):
             candleTab, lineTab, strategiesTab, dividendTab, managemtTab, dataTab, industryTab = st.tabs(
                 ["Candlesticks", "Trendline", "Strategies", "Dividends", "Management", "Data", "Industry"])
 
+        if selectedIndex == "SG REIT" or selectedIndex == "STI":
+            interestData = scraper.getMASData(duration=duration)
+        else:
+            interestData = pd.DataFrame()
+        
         with candleTab:
-            getCandlestickChart(data, selectedTicker)
-            getVolumeChart(data)
+            getCandlestickChart(stockData, selectedTicker)
+            getVolumeChart(stockData)
+            if len(interestData) != 0:
+                getInterestChart(interestData)
         with lineTab:
-            getLineChart(data, selectedTicker)
-            getVolumeChart(data)
+            getLineChart(stockData, selectedTicker)
+            getVolumeChart(stockData)
+            if len(interestData) != 0:
+                getInterestChart(interestData)
         with strategiesTab:
             intervalHours = scraper.getIntervalfromDuration(duration)
             if scraper.convertDurationToHours("3mo") <= scraper.convertDurationToHours(duration):
-                getMovingAveragesChart(data, intervalHours)
-            getResistSupportChart(data)
-            getMomentumChart(data)
+                getMovingAveragesChart(stockData, intervalHours)
+            getResistSupportChart(stockData)
+            getMomentumChart(stockData)
         if selectedTicker != indexTicker:
             with dividendTab:
                 getDividendCharts(selectedTicker)
@@ -50,9 +59,7 @@ def getDashboard(selectedIndex):
                 getPayChart(tickerInfo, selectedTicker, indexTicker)
 
         with dataTab:
-            st.dataframe(data=data[::-1].reset_index(drop=True).style.set_properties(
-                **{'text-align': 'center'}), use_container_width=True, height=600)
-            # st.dataframe(data=SP500.style.set_properties(**{'text-align': 'center'}),use_container_width=True)
+            getDataTab(stockData, interestData)
 
         with industryTab:
             if selectedTicker == indexTicker:
@@ -369,3 +376,19 @@ def getMomentumChart(df):
 def calculate_momentum(data, window):
     data['momentum'] = data['close'].pct_change(window) * 100
     return data.dropna()
+
+def getInterestChart(df):
+    chart = alt.Chart(df).mark_line(size=2).encode(
+            x=alt.X("end_of_day", title="End of Day"),
+            y=alt.Y('sora', title="SORA")
+        ).properties(height=400, title="MAS Interest Rates").interactive()
+    st.altair_chart(chart, use_container_width=True)
+
+def getDataTab(stockData, interestData):
+    st.subheader("Stocks")
+    st.dataframe(data=stockData[::-1].reset_index(drop=True).style.set_properties(
+                **{'text-align': 'center'}), use_container_width=True, height=450)
+    if len(interestData) != 0:
+        st.subheader("Interest Rate")
+        st.dataframe(data=interestData[::-1].reset_index(drop=True).style.set_properties(
+                **{'text-align': 'center'}), use_container_width=True, height=450)

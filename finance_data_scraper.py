@@ -2,6 +2,8 @@ import yahooquery as yq
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
+import urllib.request
+import json
 
 
 
@@ -106,3 +108,18 @@ def getPriceOnDate(date, ticker):
 def getIndustryData(industry):
     pass
 
+def getMASData(offset=9000, duration="1Y"):
+    #https://secure.mas.gov.sg/api/APIDescPage.aspx?resource_id=9a0bf149-308c-4bd2-832d-76c8e6cb47ed
+    noOfHours = convertDurationToHours(duration)
+    start_date = (datetime.now() - timedelta(hours=noOfHours)).strftime("%Y-%m-%d")
+    ret = []
+    for i in range(13):
+        url = f'https://eservices.mas.gov.sg/api/action/datastore/search.json?resource_id=9a0bf149-308c-4bd2-832d-76c8e6cb47ed&limit=1000&offset={offset + i * 1000}'
+
+        with urllib.request.urlopen (url) as req:
+            res = list(json.loads(req.read())['result']['records'])
+            ret += res
+    df = pd.DataFrame(ret)
+    df['end_of_day'] = pd.to_datetime(df['end_of_day'])
+    df = df[df['end_of_day'] >= start_date]
+    return df
