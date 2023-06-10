@@ -26,7 +26,7 @@ def getDashboard(selectedIndex):
 
     duration = st.sidebar.selectbox(
         "Duration", ["1d", "5d", "1wk", "1mo", "3mo", "6mo", "YTD", "1y", "5y", "10y"], index=7)
-    if selectedTicker != indexTicker:
+    if selectedIndex != 'Custom' and selectedTicker != indexTicker:
         selectedRow = symbols[symbols['Symbol'] ==
                               selectedTicker].reset_index(drop=True).T
         selectedRow.columns = ["Attributes"]
@@ -276,7 +276,12 @@ def cleanseDates(dates):
 def getResistSupportChart(df):
 
     st.subheader("Resistance and Support Lines")
-    support, resistance = calculate_support_resistance(df)
+    cols = st.columns(5)
+    with cols[3]:
+        height = st.slider('Height', min_value=-0.3, max_value=0.30, step=0.05, value=0.0)
+    with cols[4]:
+        width = st.slider('Width', min_value=0.0, max_value=0.50, step=0.05, value=0.25)
+    support, resistance = calculate_support_resistance(df, width, height)
 
     # Create DataFrame for plotting
     df["support"] = support
@@ -301,9 +306,10 @@ def getResistSupportChart(df):
 
     st.altair_chart(lineChart.properties(
         height=350).interactive(), use_container_width=True)
+    
 
 
-def calculate_support_resistance(data):
+def calculate_support_resistance(data, width, height):
     # print("calculating")
     data["date"] = pd.to_datetime(cleanseDates(data['date']), utc=True)
     # gets rid of wiggly lines due to missing timestamps
@@ -312,9 +318,9 @@ def calculate_support_resistance(data):
     p = np.polyfit(x, y, 1)  # Perform linear regression
     #print("polyfit", p)
     regression_line = np.polyval(p, x)
-    support_line = regression_line - (np.max(y) - np.min(y)) / 5
+    support_line = regression_line - (np.max(y) - np.min(y)) * width + (np.max(y) - np.min(y)) * height
     # Add the range to support line to get resistance line
-    resistance_line = regression_line + (np.max(y) - np.min(y)) / 5
+    resistance_line = regression_line + (np.max(y) - np.min(y)) * width + (np.max(y) - np.min(y)) * height
     # print("RESULT")
     #print(support_line, resistance_line)
     return support_line, resistance_line
