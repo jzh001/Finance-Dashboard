@@ -9,41 +9,13 @@ import numpy as np
 def getDashboard(selectedIndex):
     st.title(f"{selectedIndex} Dashboard")
 
-    if selectedIndex != 'Custom':
-        indexTicker, symbols = scraper.getSymbols(selectedIndex)
-
-        # List of options for the dropdown
-        symbolOptions = [indexTicker] + symbols["Symbol"].tolist()
-
-        # Dropdown component
-        selectedTicker = st.sidebar.selectbox(
-            "Ticker", symbolOptions, index=symbolOptions.index(indexTicker))
-
-    else:
-        selectedTicker = st.sidebar.text_input(
-            "Custom Ticker", max_chars=7, value="AAPL")
-        indexTicker = "Custom"
-
-    duration = st.sidebar.selectbox(
-        "Duration", ["1d", "5d", "1wk", "1mo", "3mo", "6mo", "YTD", "1y", "5y", "10y"], index=7)
-    if selectedIndex != 'Custom' and selectedTicker != indexTicker:
-        selectedRow = symbols[symbols['Symbol'] ==
-                              selectedTicker].reset_index(drop=True).T
-        selectedRow.columns = ["Attributes"]
-        st.sidebar.write(selectedRow.style.set_properties(
-            **{'text-align': 'center'}))
+    selectedTicker, indexTicker, duration = getSideBar(selectedIndex)
     try:
         tickerInfo = scraper.getInfo(selectedTicker)
     except:
         st.write("Data Unavailable: Check your Inputs")
         return
-
-    # Check if the selected option is the custom option
-    if selectedTicker == "Custom":
-        custom_input = st.sidebar.text_input("Enter a custom option")
-        if custom_input:
-            selectedTicker = custom_input
-
+    
     data = scraper.getYahooHistorical(
         selectedTicker, duration=duration)
 
@@ -109,10 +81,49 @@ def getDashboard(selectedIndex):
             pass
 
 
+def getSideBar(selectedIndex):
+    if selectedIndex != 'Custom':
+        indexTicker, symbols = scraper.getSymbols(selectedIndex)
+
+        # List of options for the dropdown
+        symbolOptions = [indexTicker] + symbols["Symbol"].tolist()
+
+        # Dropdown component
+        selectedTicker = st.sidebar.selectbox(
+            "Ticker", symbolOptions, index=symbolOptions.index(indexTicker))
+
+    else:
+        selectedTicker = st.sidebar.text_input(
+            "Custom Ticker", max_chars=7, value="AAPL")
+        indexTicker = "Custom"
+
+    duration = st.sidebar.selectbox(
+        "Duration", ["1d", "5d", "1wk", "1mo", "3mo", "6mo", "YTD", "1y", "5y", "10y"], index=7)
+    
+
+    if selectedIndex != 'Custom' and selectedTicker != indexTicker:
+        selectedRow = symbols[symbols['Symbol'] ==
+                              selectedTicker].reset_index(drop=True).T
+        selectedRow.columns = ["Attributes"]
+        st.sidebar.write(selectedRow.style.set_properties(
+            **{'text-align': 'center'}))
+        
+    # Check if the selected option is the custom option
+    if selectedTicker == "Custom":
+        custom_input = st.sidebar.text_input("Enter a custom option")
+        if custom_input:
+            selectedTicker = custom_input
+    
+    return selectedTicker, indexTicker, duration
+
+
 def getLineChart(data, selectedTicker):
+    cols = st.columns(6)
+    with cols[-1]:
+        use_log_scale = st.checkbox('Use Logarithmic Scale')
     lineChart = alt.Chart(data).mark_line(size=2).encode(
         x=alt.X("date", title="Date"),
-        y=alt.Y('close', scale=alt.Scale(zero=False), title="Close")
+        y=alt.Y('close', scale=alt.Scale(zero=False,type='linear' if not use_log_scale else 'log'), title="Close")
     ).properties(height=400, title=selectedTicker).interactive()
     st.altair_chart(lineChart, use_container_width=True)
 
