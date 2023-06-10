@@ -65,7 +65,9 @@ def getDashboard(selectedIndex):
             getLineChart(data, selectedTicker)
             getVolumeChart(data)
         with strategiesTab:
-            getMovingAveragesChart(data)
+            intervalHours = scraper.getIntervalfromDuration(duration)
+            if scraper.convertDurationToHours("3mo") <= scraper.convertDurationToHours(duration):
+                getMovingAveragesChart(data, intervalHours)
             getResistSupportChart(data)
             getMomentumChart(data)
         if selectedTicker != indexTicker:
@@ -111,7 +113,7 @@ def getLineChart(data, selectedTicker):
     lineChart = alt.Chart(data).mark_line(size=2).encode(
         x=alt.X("date", title="Date"),
         y=alt.Y('close', scale=alt.Scale(zero=False), title="Close")
-    ).properties(height=350, title=selectedTicker).interactive()
+    ).properties(height=400, title=selectedTicker).interactive()
     st.altair_chart(lineChart, use_container_width=True)
 
 
@@ -124,7 +126,7 @@ def getVolumeChart(data):
             alt.value('#2ecc71'),  # green color for bullish days
             alt.value('#e74c3c')   # red color for bearish days
         )
-    ).properties(height=150).interactive()
+    ).properties(height=200).interactive()
     st.altair_chart(volumeChart, use_container_width=True)
 
 
@@ -146,7 +148,7 @@ def getCandlestickChart(data, selectedTicker):
     )
 
     candlestickChart = candlestickChart.properties(
-        height=350, title=selectedTicker).interactive()
+        height=400, title=selectedTicker).interactive()
     st.altair_chart(candlestickChart, use_container_width=True)
 
 
@@ -244,16 +246,21 @@ def getIndustryTab(ticker, selectedIndex):
     pass  # TODO: Add industry comparisons
 
 
-def getMovingAveragesChart(data):
+def getMovingAveragesChart(data, intervalHours):
     st.subheader("Moving Averages")
+    cols = st.columns(5)
+    with cols[3]:
+        shortWindow = st.slider('Window A (Days)', step=intervalHours // 24, min_value=intervalHours * 1 // 24, max_value=intervalHours * 50 // 24, value=intervalHours * 20 // 24)
+    with cols[4]:
+        longWindow = st.slider('Window B (Days)', step=intervalHours // 24, min_value=intervalHours * 1 // 24, max_value=intervalHours * 50 // 24, value=intervalHours * 40 // 24)
     data['date'] = data['date'].astype(str)
-    short_run_ma = data['close'].rolling(window=15).mean()
-    long_run_ma = data['close'].rolling(window=30).mean()
+    short_run_ma = data['close'].rolling(window=int(shortWindow * 24 // intervalHours)).mean()
+    long_run_ma = data['close'].rolling(window=int(longWindow * 24 // intervalHours)).mean()
     moving_averages = pd.DataFrame({
         'Date': data['date'],
         'Close': data['close'],
-        'Short Run MA': short_run_ma,
-        'Long Run MA': long_run_ma
+        'Moving Average A': short_run_ma,
+        'Moving Average B': long_run_ma
     }).dropna()
     melted_data = moving_averages.melt(
         id_vars=['Date', 'Close'], var_name='Moving Average', value_name='Price')
@@ -269,6 +276,8 @@ def getMovingAveragesChart(data):
 
 
 def cleanseDates(dates):
+    if (type(dates[0]) == pd.Timestamp):
+        return dates
     minLength = min([len(date) for date in dates])
     return pd.Series([date[:minLength] for date in dates])
 

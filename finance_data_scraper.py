@@ -9,18 +9,9 @@ def getYahooHistorical(ticker,duration):
 
     ticker = yq.Ticker(ticker)
 
-    noOfHours = convertIntervalToHours(duration)
-    interval = ""
-    if noOfHours <= 24:
-        interval = "5m"
-    elif noOfHours <= 7 * 24:
-        interval = "1h"
-    elif noOfHours <= 365 * 24:
-        interval = "1d"
-    elif noOfHours <= 5 * 365 * 24:
-        interval = "1wk"
-    else:
-        interval = "1mo"
+    noOfHours = convertDurationToHours(duration)
+    interval = getIntervalFromHours(noOfHours)
+    
 
     # Calculate the start date
     end_date = datetime.now().strftime("%Y-%m-%d")
@@ -33,21 +24,39 @@ def getYahooHistorical(ticker,duration):
     return historical_data.reset_index(level=0, drop=True).reset_index()
 
 
-def convertIntervalToHours(interval):
-    if interval == "YTD":
+def getIntervalFromHours(noOfHours):
+    if noOfHours <= 24:
+        return "5m"
+    elif noOfHours <= 7 * 24:
+        return "1h"
+    elif noOfHours <= 365 * 24:
+        return "1d"
+    elif noOfHours <= 5 * 365 * 24:
+        return "1wk"
+    else:
+        return "1mo"
+
+def convertDurationToHours(duration):
+    if duration == "YTD":
         return (datetime.today() - datetime(datetime.now().year, 1, 1)).days * 24
-    elif (interval[-1] == "y"):
-        return int(interval[:-1]) * 365 * 24
-    elif (interval[-2:] == "mo"):
-        return int(interval[:-2]) * 30 * 24
-    elif (interval[-2:] == "wk"):
-        return int(interval[:-2]) * 7 * 24
-    elif (interval[-1] == "d"):
-        return int(interval[:-1]) * 24
-    elif (interval[-1] == "h"):
-        return int(interval[:-1])
+    elif (duration[-1] == "y"):
+        return int(duration[:-1]) * 365 * 24
+    elif (duration[-2:] == "mo"):
+        return int(duration[:-2]) * 30 * 24
+    elif (duration[-2:] == "wk"):
+        return int(duration[:-2]) * 7 * 24
+    elif (duration[-1] == "d"):
+        return int(duration[:-1]) * 24
+    elif (duration[-1] == "h"):
+        return int(duration[:-1])
     else:
         return 0
+    
+def getIntervalfromDuration(duration):
+    noOfHours = convertDurationToHours(duration)
+    interval = getIntervalFromHours(noOfHours)
+    return convertDurationToHours(interval)
+    
 
 
 def getSymbols(index):
@@ -56,7 +65,7 @@ def getSymbols(index):
     elif index == "STI":
         return "^STI", pd.read_csv("data/STI.csv")
     elif index == "SG REIT":
-        return "^STI", pd.read_csv("data/SG_REIT.csv")
+        return "CLR.SI", pd.read_csv("data/SG_REIT.csv")
     else:
         return None
 
@@ -71,7 +80,7 @@ def getFinancialData(ticker):
 
 
 def getDividendData(ticker):
-    noOfHours = convertIntervalToHours("10y")
+    noOfHours = convertDurationToHours("10y")
     df = yq.Ticker(ticker).dividend_history(start=(datetime.now() - timedelta(hours=noOfHours)).strftime("%Y-%m-%d")).reset_index()
     df["dividendPercent"] = [100 * row['dividends'] / getPriceOnDate(row['date'], ticker) for i, row in df.iterrows()]
     return df
