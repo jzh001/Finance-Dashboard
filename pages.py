@@ -348,34 +348,15 @@ def getMacroChartsTab(interestData, exchangeData, duration, id):
 def getEconomyTab(stockData, interestData, exchangeData, duration):
     if scraper.convertDurationToHours("1wk") > scraper.convertDurationToHours(duration) or len(interestData) == 0 or len(exchangeData) == 0:
         return
-    
-    # getMacroChartsTab(interestData, exchangeData, duration,"economyTab")
-    getCorrelationLine(stockData, interestData)
-    # getCorrelationValues(stockData, interestData)
-
-
-def getCorrelationValues(stockData, interestData):
-    # Calculate cross-correlation
-    cross_corr = np.correlate(stockData['close'], interestData['sora'], mode='full')
-
-    # The resulting cross-correlation array will have 2 * len(x) - 1 elements
-    # The peak of the cross-correlation represents the highest similarity or correlation
-    peak_index = np.argmax(cross_corr)
-
-    # Calculate the time lag corresponding to the peak index
-    time_lag = peak_index - len(stockData['close']) + 1
-
-    st.write(f'Cross-correlation: {cross_corr}\nTime Lag: {time_lag}')
-
-    print("Cross-correlation:", cross_corr)
-    print("Peak Index:", peak_index)
-    print("Time Lag:", time_lag)
-
-def getCorrelationLine(stockData, interestData):
-    mergedDf = mergeData(stockData[["date", "close"]], "date", interestData[["end_of_day", "sora"]], "end_of_day").reset_index()
-    print(mergedDf)
+    mergedDf = mergeData(stockData[["date", "close"]], "date", interestData[["end_of_day", "sora"]], "end_of_day")
     df = pd.DataFrame({'Date': mergedDf['date'],'Close': mergedDf['close'], "Interest Rate": mergedDf['sora']})
     df['Date'] = pd.to_datetime(df['Date'])
+    # getMacroChartsTab(interestData, exchangeData, duration,"economyTab")
+    getCorrelationLine(df)
+    getCloseInterestScatter(df)
+
+def getCorrelationLine(df):
+    
     # Create an Altair scatter plot
     
     scatter_plot = alt.Chart(df).mark_circle(size=70).encode(
@@ -396,10 +377,20 @@ def getCorrelationLine(stockData, interestData):
     st.write("Closing Prices and Interest Rate")
     st.altair_chart(chart, use_container_width=True)
 
-def mergeData(df1, col1, df2, col2):
-    print(df1)
-    df1.set_index(col1)
-    df2.set_index(col2)
-    df = pd.merge(df1, df2, left_index=True, right_index=True)
-    print(df)
+def getCloseInterestScatter(df):
+    scatter_plot = alt.Chart(df).mark_circle().encode(
+        x=alt.X('Interest Rate:Q', scale=alt.Scale(zero=False)),
+        y=alt.Y('Close:Q', scale=alt.Scale(zero=False)),
+    ).properties(
+        height=400
+    ).interactive()
+    st.altair_chart(scatter_plot, use_container_width=True)
+
+def mergeData(df1, col1, df2, col2): #df1 > df2
+    df1[col1] = pd.to_datetime(df1[col1]).dt.tz_localize(None)
+    df2[col2]  = pd.to_datetime(df2[col2]).dt.tz_localize(None)
+    df1 = df1.set_index(col1)
+    df2 = df2.set_index(col2)
+    df = pd.merge(df1, df2, left_index=True, right_index=True).reset_index()
+    df = df.rename(columns={'index': 'date'})
     return df
