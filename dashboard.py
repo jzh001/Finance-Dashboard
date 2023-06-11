@@ -60,7 +60,7 @@ def getDashboard(selectedIndex):
             getDataTab(stockData, interestData)
 
         with economyTab:
-            getEconomyTab(stockData, interestData, exchangeData, duration)
+            getEconomyTab(stockData, interestData, duration)
 
 
             

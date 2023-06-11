@@ -123,7 +123,7 @@ def getMASData(resourceID, duration="1y", dateVar = "end_of_day", add = ""):
     ret = []
     for i in range(4):
         url = f'https://eservices.mas.gov.sg/api/action/datastore/search.json?resource_id={resourceID}&limit=1000&offset={i * 1000}&sort={dateVar}%20desc' + add
-        print(url)
+        # print(url)
 
         with urllib.request.urlopen (url) as req:
             res = list(json.loads(req.read())['result']['records'])

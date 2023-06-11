@@ -301,8 +301,8 @@ def getMomentumChart(df):
     ).interactive(), use_container_width=True)
 
 
-def calculate_momentum(data, window):
-    data['momentum'] = data['close'].pct_change(window) * 100
+def calculate_momentum(data, window, inputCol = 'close', targetCol = 'momentum'):
+    data[targetCol] = data[inputCol].pct_change(window) * 100
     return data.dropna()
 
 
@@ -345,15 +345,48 @@ def getMacroChartsTab(interestData, exchangeData, duration, id):
     with exchangeTab:
         getExchangeRateChart(exchangeData, id)
 
-def getEconomyTab(stockData, interestData, exchangeData, duration):
-    if scraper.convertDurationToHours("1wk") > scraper.convertDurationToHours(duration) or len(interestData) == 0 or len(exchangeData) == 0:
+def getEconomyTab(stockData, interestData, duration):
+    if scraper.convertDurationToHours("1wk") > scraper.convertDurationToHours(duration) or len(interestData) == 0:
         return
     mergedDf = mergeData(stockData[["date", "close"]], "date", interestData[["end_of_day", "sora"]], "end_of_day")
+    # mergedDf = mergeData(mergedDf, 'date', exchangeData[['end_of_week', 'usd_sgd']], 'end_of_week')
     df = pd.DataFrame({'Date': mergedDf['date'],'Close': mergedDf['close'], "Interest Rate": mergedDf['sora']})
     df['Date'] = pd.to_datetime(df['Date'])
     # getMacroChartsTab(interestData, exchangeData, duration,"economyTab")
     getCorrelationLine(df)
-    getCloseInterestScatter(df)
+    col1, col2 = st.columns(2)
+    with col1:
+        getCloseInterestScatter(df)
+    with col2:
+        getCorrelationMatrix(df)
+
+
+def getCorrelationMatrix(df):
+    print(df)
+    # df = calculate_momentum(df, 5, 'Close', 'Price Momentum')
+    # df = calculate_momentum(df, 5, 'Interest Rate', 'Interest Rate Momentum')
+    print(df)
+
+    # Calculate the correlation matrix
+    corr_matrix = df.corr()
+    print(corr_matrix)
+
+    # Convert correlation matrix to long format
+    corr_df = corr_matrix.stack().reset_index()
+    corr_df.columns = ['Variable 1', 'Variable 2', 'Correlation']
+
+    # Create the correlation heatmap using Altair
+    heatmap = alt.Chart(corr_df).mark_rect().encode(
+        x='Variable 1:O',
+        y='Variable 2:O',
+        color='Correlation:Q'
+    ).properties(
+        height=400
+    ).interactive()
+
+    # Display the correlation heatmap using Streamlit
+    st.write("Correlation Heatmap")
+    st.altair_chart(heatmap, use_container_width=True)
 
 def getCorrelationLine(df):
     
@@ -387,10 +420,12 @@ def getCloseInterestScatter(df):
     st.altair_chart(scatter_plot, use_container_width=True)
 
 def mergeData(df1, col1, df2, col2): #df1 > df2
+    # print(df2)
     df1[col1] = pd.to_datetime(df1[col1]).dt.tz_localize(None)
     df2[col2]  = pd.to_datetime(df2[col2]).dt.tz_localize(None)
     df1 = df1.set_index(col1)
     df2 = df2.set_index(col2)
     df = pd.merge(df1, df2, left_index=True, right_index=True).reset_index()
     df = df.rename(columns={'index': 'date'})
+    # print(df)
     return df
