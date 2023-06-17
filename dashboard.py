@@ -81,5 +81,3 @@ def getDashboard(selectedIndex):
             getNews(selectedTicker)
         except:
             pass
-
-

@@ -361,14 +361,14 @@ def getEconomyTab(stockData, interestData, duration):
 
 
 def getCorrelationMatrix(df):
-    print(df)
+    # print(df)
     # df = calculate_momentum(df, 5, 'Close', 'Price Momentum')
     # df = calculate_momentum(df, 5, 'Interest Rate', 'Interest Rate Momentum')
-    print(df)
+    # print(df)
 
     # Calculate the correlation matrix
     corr_matrix = df.corr()
-    print(corr_matrix)
+    # print(corr_matrix)
 
     # Convert correlation matrix to long format
     corr_df = corr_matrix.stack().reset_index()
