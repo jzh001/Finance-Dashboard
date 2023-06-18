@@ -111,7 +111,11 @@ def getIndustryData(industry):
 
 
 def getMASInterestData(duration="1y"):
-    return getMASData('9a0bf149-308c-4bd2-832d-76c8e6cb47ed', duration, "end_of_day", "&fields=end_of_day,sora")
+    df = getMASData('9a0bf149-308c-4bd2-832d-76c8e6cb47ed', duration, "end_of_day", "&fields=end_of_day,sora")
+    df['date'] = df['end_of_day']
+    df['Interest Rate'] = df['sora']
+    
+    return df[["date", "Interest Rate"]]
 
 def getMASExchangeRateData(duration = "1y"):
     return getMASData('5aa64bc2-d234-43f3-892e-2f587a220f74', duration, "end_of_week").drop(columns=["timestamp", "preliminary"])
@@ -141,3 +145,16 @@ def getCountryFromIndex(selectedIndex):
     else:
         return None
     
+
+def getEffFedFundsRate(duration = "1y"):
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    url = f'https://fred.stlouisfed.org/graph/fredgraph.csv?bgcolor=%23e1e9f0&chart_type=line&drp=0&fo=open%20sans&graph_bgcolor=%23ffffff&height=450&mode=fred&recession_bars=on&txtcolor=%23444444&ts=12&tts=12&width=1318&nt=0&thu=0&trc=0&show_legend=yes&show_axis_titles=yes&show_tooltip=yes&id=EFFR&scale=left&cosd=2000-07-03&coed=2023-06-15&line_color=%234572a7&link_values=false&line_style=solid&mark_type=none&mw=3&lw=2&ost=-99999&oet=99999&mma=0&fml=a&fq=Daily&fam=avg&fgst=lin&fgsnd=2020-02-01&line_index=1&transformation=lin&vintage_date={today}&revision_date={today}&nd=2000-07-03'
+    df = pd.read_csv(url)
+    df = df[df['EFFR'] != '.'].reset_index(drop=True)
+    df['Interest Rate'] = pd.to_numeric(df['EFFR'])
+    df['date'] = pd.to_datetime(df['DATE'])
+    noOfHours = convertDurationToHours(duration)
+    start_date = (datetime.now() - timedelta(hours=noOfHours)).strftime("%Y-%m-%d")
+    df = df[df['date'] >= start_date]
+    return df[['date', 'Interest Rate']].reset_index(drop=True)

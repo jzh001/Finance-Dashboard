@@ -31,6 +31,9 @@ def getDashboard(selectedIndex):
         if scraper.getCountryFromIndex(selectedIndex) == "SG":
             interestData = scraper.getMASInterestData(duration=duration)
             exchangeData = scraper.getMASExchangeRateData(duration=duration)
+        elif scraper.getCountryFromIndex(selectedIndex) == "USA":
+            interestData = scraper.getEffFedFundsRate(duration=duration)
+            exchangeData = pd.DataFrame()
         else:
             interestData = pd.DataFrame()
             exchangeData = pd.DataFrame()

@@ -307,9 +307,9 @@ def calculate_momentum(data, window, inputCol = 'close', targetCol = 'momentum')
 
 def getInterestChart(df):
     chart = alt.Chart(df).mark_line(size=2).encode(
-        x=alt.X("end_of_day", title="End of Day"),
-        y=alt.Y('sora', title="SORA")
-    ).properties(height=400, title="MAS Interest Rate").interactive()
+        x=alt.X("date", title="End of Day"),
+        y=alt.Y('Interest Rate', title="Interest Rate")
+    ).properties(height=400, title="Interest Rate").interactive()
     st.altair_chart(chart, use_container_width=True)
 
 
@@ -335,21 +335,23 @@ def getDataTab(stockData, interestData):
             **{'text-align': 'center'}), use_container_width=True, height=250)
 
 def getMacroChartsTab(interestData, exchangeData, duration, id):
-    if scraper.convertDurationToHours("1wk") > scraper.convertDurationToHours(duration) or len(interestData) == 0 or len(exchangeData) == 0:
+    if scraper.convertDurationToHours("1wk") > scraper.convertDurationToHours(duration):
         return
     
     interestTab, exchangeTab = st.tabs(["Interest Rate", "Exchange Rate"])
     with interestTab:
-        getInterestChart(interestData)
+        if len(interestData) != 0:
+            getInterestChart(interestData)
     with exchangeTab:
-        getExchangeRateChart(exchangeData, id)
+        if len(exchangeData) != 0:
+            getExchangeRateChart(exchangeData, id)
 
 def getEconomyTab(stockData, interestData, duration):
     if scraper.convertDurationToHours("1wk") > scraper.convertDurationToHours(duration) or len(interestData) == 0:
         return
-    mergedDf = mergeData(stockData[["date", "close"]], "date", interestData[["end_of_day", "sora"]], "end_of_day")
+    mergedDf = mergeData(stockData[["date", "close"]], "date", interestData[["date", "Interest Rate"]], "date")
     # mergedDf = mergeData(mergedDf, 'date', exchangeData[['end_of_week', 'usd_sgd']], 'end_of_week')
-    df = pd.DataFrame({'Date': mergedDf['date'],'Close': mergedDf['close'], "Interest Rate": mergedDf['sora']})
+    df = pd.DataFrame({'Date': mergedDf['date'],'Close': mergedDf['close'], "Interest Rate": mergedDf['Interest Rate']})
     df['Date'] = pd.to_datetime(df['Date'])
     # getMacroChartsTab(interestData, exchangeData, duration,"economyTab")
     getCorrelationLine(df)
