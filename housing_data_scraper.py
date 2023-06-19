@@ -7,7 +7,7 @@ def getResaleHDBPrices():
     notOverlapping = True
     offset = 0
     res = []
-    step = 5000
+    step = 100
     while (notOverlapping):
         url = f'https://data.gov.sg/api/action/datastore_search?resource_id=f1765b54-a209-4718-8d38-a39237f502b3&limit={step}&sort=month%20desc&offset={offset}'
         
@@ -17,6 +17,7 @@ def getResaleHDBPrices():
         if res[-1]['_id'] <= len(df):
             notOverlapping = False
         offset += step
+        step = 5000
     df2 = pd.DataFrame(res).sort_values(by=['_id'])
     df2 = df2[df2['_id'] > len(df)].reset_index(drop=True)
 
