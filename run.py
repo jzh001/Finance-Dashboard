@@ -13,7 +13,7 @@ if navOption == "Stock Market":
     )
     stock_dashboard.getDashboard(stockType)
 elif navOption == "Real Estate":
-    st.write(housing_data_scraper.getResaleHDBPrices()[::-1])
+    st.write(housing_data_scraper.getResaleHDBPrices()[::-1].reset_index(drop=True))
     
 
 
