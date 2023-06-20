@@ -1,10 +1,10 @@
 import streamlit as st
 import stock_dashboard
-import housing_data_scraper
+import housing_dashboard
 
 st.set_page_config(layout="wide")
 
-navOption =st.sidebar.selectbox("Navigation",options=["Stock Market", "Real Estate"])
+navOption =st.sidebar.selectbox("Asset Type",options=["Stock Market", "Property Market"])
 
 if navOption == "Stock Market":
     stockType = st.sidebar.selectbox(
@@ -12,8 +12,8 @@ if navOption == "Stock Market":
         ('STI', 'SG REIT', 'S&P 500', 'Custom')
     )
     stock_dashboard.getDashboard(stockType)
-elif navOption == "Real Estate":
-    st.write(housing_data_scraper.getResaleHDBPrices()[::-1][:10000].reset_index(drop=True))
+elif navOption == "Property Market":
+    housing_dashboard.getDashboard()
     
 
 
