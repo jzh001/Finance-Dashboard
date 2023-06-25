@@ -65,5 +65,8 @@ def plotHdbMapDistribution(df):
 def get_location(town):
     df = pd.read_csv('data/Town Coords.csv')
     df.set_index('town', inplace=True)
-    lat, lon = df['lat'][town], df['lon'][town]
-    return lat, lon
+    try:
+        lat, lon = df['lat'][town], df['lon'][town]
+        return lat, lon
+    except:
+        return None
