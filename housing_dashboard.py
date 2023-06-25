@@ -17,7 +17,7 @@ def getDashboard():
 def getResaleHdbTab():
     df = housing_data_scraper.getResaleHDBPrices()
     getResaleHdbBarChart(df)
-    plotHdbMapDistribution(df)
+    # plotHdbMapDistribution(df)
 
 
 def getResaleHdbBarChart(df):
